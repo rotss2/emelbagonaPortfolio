@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emel Carlo Bagona | Terminal Portfolio</title>
+  <meta name="description" content="Terminal-style portfolio: Emel Carlo Bagona (HTML • Python • JavaScript). Projects: Restaurant Management System, Simple RPG Game." />
+
+  <style>
+    :root{
+      --bg:#070b10;
+      --panel:#0b121a;
+      --panel2:#0f1a25;
+      --line:rgba(255,255,255,.10);
+      --text:rgba(235,255,245,.95);
+      --muted:rgba(235,255,245,.68);
+      --green:#29ff9b;
+      --amber:#ffd36a;
+      --red:#ff6b6b;
+      --blue:#6aa9ff;
+      --shadow: 0 18px 40px rgba(0,0,0,.55);
+      --r:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: var(--mono);
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 60% -10%, rgba(41,255,155,.08), transparent 60%),
+        radial-gradient(800px 500px at 10% 30%, rgba(106,169,255,.07), transparent 55%),
+        radial-gradient(800px 500px at 90% 70%, rgba(255,211,106,.05), transparent 55%),
+        linear-gradient(180deg, #04070b, var(--bg));
+      overflow-x:hidden;
+    }
+
+    /* Subtle scanlines */
+    .scan{
+      pointer-events:none;
+      position:fixed; inset:0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.04),
+        rgba(255,255,255,.04) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      opacity:.07;
+      mix-blend-mode: overlay;
+    }
+
+    /* Fake cursor blink */
+    @keyframes blink { 50% { opacity: 0; } }
+    .cursor{
+      display:inline-block;
+      width:9px;
+      height:1.1em;
+      background: var(--green);
+      margin-left:4px;
+      transform: translateY(2px);
+      animation: blink 1s steps(2, start) infinite;
+      box-shadow: 0 0 12px rgba(41,255,155,.35);
+    }
+
+    .wrap{
+      width:min(1100px, calc(100% - 28px));
+      margin: 18px auto 60px;
+    }
+
+    /* Terminal window */
+    .term{
+      border-radius: var(--r);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(15,26,37,.92), rgba(11,18,26,.92));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .termTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px 14px;
+      background: rgba(0,0,0,.25);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .dots{
+      display:flex; gap:8px; align-items:center;
+    }
+    .dot{ width:10px; height:10px; border-radius:99px; }
+    .dot.red{ background: var(--red); }
+    .dot.amb{ background: var(--amber); }
+    .dot.grn{ background: var(--green); }
+
+    .title{
+      color: var(--muted);
+      font-size: 12px;
+      opacity:.95;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+
+    .kbd{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      color: var(--muted);
+      font-size:12px;
+      padding: 6px 10px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(255,255,255,.03);
+    }
+    .kbd b{ color: var(--text); font-weight:700; }
+
+    .termBody{
+      padding: 16px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 14px;
+    }
+    @media (max-width: 940px){
+      .termBody{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: var(--r);
+      background: rgba(0,0,0,.18);
+      padding: 14px;
+    }
+
+    .line{
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .prompt{
+      color: var(--green);
+      font-weight:800;
+    }
+    .cmd{
+      color: rgba(235,255,245,.9);
+      font-weight:700;
+    }
+    .hint{
+      color: rgba(235,255,245,.62);
+      font-size:12px;
+      margin-top: 10px;
+    }
+
+    .menu{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top: 12px;
+    }
+    .chip{
+      cursor:pointer;
+      user-select:none;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 12px;
+      transition:.15s ease;
+    }
+    .chip:hover{
+      transform: translateY(-1px);
+      border-color: rgba(41,255,155,.35);
+      color: var(--text);
+    }
+    .chip.active{
+      border-color: rgba(41,255,155,.45);
+      box-shadow: 0 0 0 3px rgba(41,255,155,.10);
+      color: var(--text);
+    }
+
+    /* Output area */
+    .output{
+      margin-top: 12px;
+      border-top: 1px dashed rgba(255,255,255,.10);
+      padding-top: 12px;
+      min-height: 220px;
+    }
+
+    .box{
+      padding: 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      margin-top: 10px;
+    }
+    .box h3{
+      margin:0 0 8px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .box p{
+      margin:0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* Right side: RPG / Stats */
+    .rpgHeader{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom: 10px;
+    }
+    .rpgHeader b{ font-size: 13px; }
+    .tag{
+      font-size: 11px;
+      color: rgba(235,255,245,.75);
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .stat{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .stat span{
+      display:block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    .stat b{
+      display:block;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .bar{
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      margin-top: 8px;
+    }
+    .bar i{
+      display:block;
+      height:100%;
+      width: 0%;
+      background: var(--green);
+      box-shadow: 0 0 14px rgba(41,255,155,.22);
+      transition: width 900ms ease;
+    }
+
+    .contact{
+      display:grid;
+      gap:10px;
+      margin-top: 12px;
+    }
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius: 14px;
+      padding: 10px 10px;
+    }
+    .row .left{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width: 0;
+    }
+    .row .left b{ font-size: 12px; }
+    .row .left span{
+      font-size: 12px;
+      color: var(--muted);
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 360px;
+    }
+
+    .btn{
+      cursor:pointer;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      padding: 9px 10px;
+      font-size: 12px;
+      transition:.15s ease;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(106,169,255,.35);
+    }
+
+    footer{
+      margin-top: 12px;
+      text-align:center;
+      color: rgba(235,255,245,.55);
+      font-size: 12px;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(24px);
+      opacity:0;
+      pointer-events:none;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      color: var(--text);
+      font-size: 12px;
+      box-shadow: var(--shadow);
+      transition: .18s ease;
+      z-index: 9999;
+    }
+    .toast.show{
+      transform: translateX(-50%) translateY(0);
+      opacity:1;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="scan" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="term">
+      <div class="termTop">
+        <div class="dots" aria-hidden="true">
+          <span class="dot red"></span>
+          <span class="dot amb"></span>
+          <span class="dot grn"></span>
+        </div>
+
+        <div class="title">emel@portfolio:~ — terminal-ui</div>
+
+        <div class="kbd" title="Tip">
+          <span>Type:</span> <b>about</b> <span>/</span> <b>skills</b> <span>/</span> <b>projects</b> <span>/</span> <b>contact</b>
+        </div>
+      </div>
+
+      <div class="termBody">
+        <!-- LEFT: interactive terminal output -->
+        <div class="panel">
+          <div class="line">
+            <span class="prompt">emel$</span>
+            <span class="cmd" id="typeLine"></span><span class="cursor" aria-hidden="true"></span>
+          </div>
+
+          <div class="menu" role="navigation" aria-label="Commands">
+            <div class="chip active" data-cmd="about">about</div>
+            <div class="chip" data-cmd="skills">skills</div>
+            <div class="chip" data-cmd="projects">projects</div>
+            <div class="chip" data-cmd="contact">contact</div>
+            <div class="chip" data-cmd="clear">clear</div>
+          </div>
+
+          <div class="output" id="output" aria-live="polite"></div>
+
+          <div class="hint">
+            Tip: Click a command. This UI is intentionally different (terminal style) from typical “glass + gradient” portfolios.
+          </div>
+        </div>
+
+        <!-- RIGHT: RPG-ish sidebar -->
+        <div class="panel">
+          <div class="rpgHeader">
+            <b>Character Sheet</b>
+            <span class="tag">Student Dev</span>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <span>Name</span>
+              <b>Emel Carlo Bagona</b>
+            </div>
+            <div class="stat">
+              <span>Location</span>
+              <b>Dumaran, Palawan</b>
+            </div>
+            <div class="stat">
+              <span>Main Tools</span>
+              <b>HTML • Python • JS</b>
+            </div>
+            <div class="stat">
+              <span>Build Style</span>
+              <b>Systems + Games</b>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="line">
+            <span style="color:var(--muted)">Learning Progress</span>
+            <div class="bar" data-level="70"><i></i></div>
+            <div class="bar" data-level="60" style="margin-top:10px"><i></i></div>
+            <div class="bar" data-level="55" style="margin-top:10px"><i></i></div>
+            <div class="line" style="margin-top:8px; font-size:12px;">
+              <span style="color:var(--green)">■</span> HTML
+              &nbsp;&nbsp;<span style="color:var(--green)">■</span> Python
+              &nbsp;&nbsp;<span style="color:var(--green)">■</span> JavaScript
+            </div>
+          </div>
+
+          <div class="contact" style="margin-top:14px">
+            <div class="row">
+              <div class="left">
+                <b>Email</b>
+                <span id="emailText">emelbagona19@gmail.com</span>
+              </div>
+              <button class="btn" id="copyEmail">Copy</button>
+            </div>
+
+            <div class="row">
+              <div class="left">
+                <b>Phone</b>
+                <span id="phoneText">0954 249 9784</span>
+              </div>
+              <button class="btn" id="copyPhone">Copy</button>
+            </div>
+
+            <div class="row">
+              <div class="left">
+                <b>Quick</b>
+                <span>Open email / call</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <a class="btn" href="mailto:emelbagona19@gmail.com" style="text-decoration:none; display:inline-flex; align-items:center;">Mail</a>
+                <a class="btn" href="tel:+639542499784" style="text-decoration:none; display:inline-flex; align-items:center;">Call</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      © <span id="year"></span> Emel Carlo Bagona • Terminal UI Portfolio
+    </footer>
+  </div>
+
+  <div class="toast" id="toast">Copied!</div>
+
+  <script>
+    // ====== DATA ======
+    const PROFILE = {
+      name: "Emel Carlo Bagona",
+      email: "emelbagona19@gmail.com",
+      phoneRaw: "09542499784",
+      phonePretty: "0954 249 9784",
+      location: "Dumaran, Palawan",
+      skills: ["HTML (learning)", "Python (learning)", "JavaScript (learning)"],
+      projects: [
+        {
+          title: "Restaurant Management System",
+          desc: "A simple system idea for managing orders, billing, and records to practice real-world logic (CRUD, workflow, UI).",
+          tags: ["System", "Logic", "Practice"]
+        },
+        {
+          title: "Simple RPG Game",
+          desc: "A beginner RPG project focusing on character stats, simple battle mechanics, and progression logic.",
+          tags: ["Game", "JavaScript", "Learning"]
+        }
+      ]
+    };
+
+    // ====== TYPEWRITER INTRO ======
+    const typeLine = document.getElementById("typeLine");
+    const introText = `run portfolio --user "${PROFILE.name}"`;
+    let idx = 0;
+
+    function typeIntro(){
+      if(idx <= introText.length){
+        typeLine.textContent = introText.slice(0, idx);
+        idx++;
+        requestAnimationFrame(typeIntro);
+      } else {
+        render("about");
+        animateBars();
+      }
+    }
+    typeIntro();
+
+    // ====== OUTPUT RENDER ======
+    const output = document.getElementById("output");
+    function esc(s){ return (s+"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+    function render(cmd){
+      if(cmd === "clear"){
+        output.innerHTML = "";
+        return;
+      }
+
+      const stamp = new Date().toLocaleString();
+      let html = `<div class="line"><span style="color:var(--green);font-weight:800;">➜</span> <span style="color:var(--muted);">[${esc(stamp)}]</span> <span class="cmd">${esc(cmd)}</span></div>`;
+
+      if(cmd === "about"){
+        html += `
+          <div class="box">
+            <h3>ABOUT</h3>
+            <p>
+              Hi! I’m <b>${esc(PROFILE.name)}</b> from <b>${esc(PROFILE.location)}</b>.
+              I’m currently learning development by building simple systems and game projects.
+            </p>
+          </div>
+          <div class="box">
+            <h3>GOAL</h3>
+            <p>
+              Improve my coding fundamentals, create more projects, and build a stronger portfolio for opportunities.
+            </p>
+          </div>
+        `;
+      }
+
+      if(cmd === "skills"){
+        html += `
+          <div class="box">
+            <h3>SKILLS (learning)</h3>
+            <p>• ${esc(PROFILE.skills.join("\n• "))}</p>
+          </div>
+          <div class="box">
+            <h3>WHAT I PRACTICE</h3>
+            <p>
+              • Layout & structure (HTML)<br/>
+              • Logic & problem solving (Python)<br/>
+              • Interactivity & UI behavior (JavaScript)
+            </p>
+          </div>
+        `;
+      }
+
+      if(cmd === "projects"){
+        const cards = PROFILE.projects.map(p => `
+          <div class="box">
+            <h3>${esc(p.title)}</h3>
+            <p>${esc(p.desc)}</p>
+            <p style="margin-top:10px; color: rgba(235,255,245,.62); font-size:12px;">
+              tags: ${p.tags.map(t=>`<span style="color:var(--green);">#${esc(t)}</span>`).join(" ")}
+            </p>
+          </div>
+        `).join("");
+        html += cards;
+      }
+
+      if(cmd === "contact"){
+        html += `
+          <div class="box">
+            <h3>CONTACT</h3>
+            <p>
+              Email: <span style="color:var(--green);">${esc(PROFILE.email)}</span><br/>
+              Phone: <span style="color:var(--green);">${esc(PROFILE.phonePretty)}</span><br/>
+              Location: <span style="color:var(--green);">${esc(PROFILE.location)}</span>
+            </p>
+          </div>
+          <div class="box">
+            <h3>QUICK LINKS</h3>
+            <p>
+              • <a style="color:var(--blue)" href="mailto:${esc(PROFILE.email)}">Send Email</a><br/>
+              • <a style="color:var(--blue)" href="tel:+63${esc(PROFILE.phoneRaw.slice(1))}">Call Phone</a>
+            </p>
+          </div>
+        `;
+      }
+
+      output.innerHTML = html + output.innerHTML;
+    }
+
+    // ====== MENU HANDLER ======
+    const chips = document.querySelectorAll(".chip");
+    chips.forEach(ch=>{
+      ch.addEventListener("click", ()=>{
+        chips.forEach(c=>c.classList.remove("active"));
+        ch.classList.add("active");
+        const cmd = ch.dataset.cmd;
+        render(cmd);
+      });
+    });
+
+    // ====== PROGRESS BARS ======
+    function animateBars(){
+      document.querySelectorAll(".bar").forEach((b)=>{
+        const level = b.getAttribute("data-level") || "60";
+        const i = b.querySelector("i");
+        setTimeout(()=> i.style.width = level + "%", 250);
+      });
+    }
+
+    // ====== COPY HELPERS ======
+    const toast = document.getElementById("toast");
+    let toastTimer;
+    function showToast(msg="Copied!"){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=> toast.classList.remove("show"), 1200);
+    }
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast("Copied!");
+      }catch(e){
+        const t = document.createElement("textarea");
+        t.value = text;
+        document.body.appendChild(t);
+        t.select();
+        document.execCommand("copy");
+        document.body.removeChild(t);
+        showToast("Copied!");
+      }
+    }
+
+    document.getElementById("copyEmail").addEventListener("click", ()=> copyText(PROFILE.email));
+    document.getElementById("copyPhone").addEventListener("click", ()=> copyText(PROFILE.phonePretty));
+
+    // ====== YEAR ======
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
